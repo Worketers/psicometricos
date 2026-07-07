@@ -1,6 +1,6 @@
 // app.js - KBS Edition
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyhP7V1uyVhb30bvhUseT9_j37jKHbMhmGHA-UolVSyAP6nHD0eDItszWuyVX5OWNWw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwP4-LmFZth1NECfSKRmGMupmtDnND2PXuaUKTllU6qMVmMpchtBfGbmy8bd-Dl59Is/exec";
 
 let currentSerieIndex = 0;
 let respuestasCandidato = {};
