@@ -1,127 +1,176 @@
-/* style.css - KBS Gold & Black Edition */
+/* style.css - Worketers Light Edition */
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
 
 :root {
-    /* Paleta Corporativa KBS */
-    --kbs-gold: #D4AF37;
-    --kbs-gold-glow: rgba(212, 175, 55, 0.4);
-    --kbs-gold-hover: #FFF7D6;
-    --bg-dark: #000000;
-    --bg-light: #0d0d0d;
-    --card-bg: rgba(10, 10, 10, 0.85);
-    
-    /* Textos y Alertas */
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --glow-green: rgba(34, 197, 94, 0.6);
-    --glow-red: rgba(239, 68, 68, 0.6);
-    --glow-yellow: rgba(234, 179, 8, 0.6);
+    /* Paleta Worketers */
+    --color-primario: #0096a3;
+    --color-primario-hover: #2ac2b5;
+    --color-primario-dark: #26857d;
+
+    /* Fondos claros */
+    --fondo-pantalla: #f8fafc;
+    --fondo-contenedor: #ffffff;
+    --fondo-seccion: #eef8f8;
+
+    /* Textos y bordes */
+    --texto-principal: #334155;
+    --texto-etiquetas: #1e293b;
+    --texto-muted: #64748b;
+    --borde-suave: #e2e8f0;
+
+    /* Sombras */
+    --sombra-suave: rgba(0, 0, 0, 0.03);
+    --sombra-turquesa: rgba(0, 150, 163, 0.15);
+
+    /* Alertas */
+    --glow-green: rgba(34, 197, 94, 0.25);
+    --glow-red: rgba(239, 68, 68, 0.25);
+    --glow-yellow: rgba(234, 179, 8, 0.25);
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
-    /* Fondo radial oscuro como en el portal de RRHH */
-    background: radial-gradient(ellipse at bottom, var(--bg-light) 0%, var(--bg-dark) 100%);
-    color: var(--text-main);
+    background: var(--fondo-pantalla);
+    color: var(--texto-principal);
     font-family: 'Lato', sans-serif;
     margin: 0;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Para que en móviles se pueda hacer scroll bien */
+    align-items: flex-start;
     min-height: 100vh;
     padding: 40px 0;
-    box-sizing: border-box;
 }
 
+/* Contenedor principal */
 .hyperion-wrapper {
     width: 100%;
     max-width: 850px;
     padding: 20px;
-    box-sizing: border-box;
 }
 
-/* Tarjetas Estilo Cristal Dorado */
-.card, .test-header, .instructions-box, .question-block {
-    background: var(--card-bg);
+/* Tarjetas estilo Worketers */
+.card,
+.test-header,
+.instructions-box,
+.question-block {
+    background: var(--fondo-contenedor);
     padding: 30px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 25px;
-    border: 1px solid var(--kbs-gold);
-    box-shadow: 0 0 20px var(--kbs-gold-glow);
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--borde-suave);
+    box-shadow: 0 10px 25px var(--sombra-suave);
 }
 
 .question-block {
-    border: 1px solid #333; /* Más sutil para las preguntas */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+    background: var(--fondo-contenedor);
+    border: 1px solid var(--borde-suave);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .question-block:hover {
-    border-color: var(--kbs-gold);
+    border-color: #99d5da;
+    box-shadow: 0 6px 18px var(--sombra-turquesa);
     transition: all 0.3s ease;
 }
 
-h2 { 
-    color: var(--kbs-gold); 
-    margin-top: 0; 
+h2 {
+    color: var(--color-primario);
+    margin-top: 0;
     letter-spacing: 1px;
     text-align: center;
+    text-transform: uppercase;
 }
 
 .question-block p {
-    color: var(--kbs-gold);
+    color: var(--color-primario-dark);
     font-size: 1.1rem;
+    font-weight: 700;
     margin-top: 0;
 }
 
-/* Inputs y Cajas de Texto */
-input[type="text"], input[type="number"], input[type="email"] {
+/* Inputs y cajas de texto */
+input[type="text"],
+input[type="number"],
+input[type="email"] {
     width: 100%;
     padding: 12px;
     margin: 15px 0 25px 0;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-bottom: 1px solid #444;
-    color: white;
+    background: var(--fondo-contenedor);
+    border: 1px solid var(--borde-suave);
+    border-radius: 6px;
+    color: var(--texto-principal);
     font-size: 16px;
     font-family: 'Lato', sans-serif;
-    box-sizing: border-box;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
 }
 
-input[type="text"]:focus, input[type="number"]:focus {
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="email"]::placeholder {
+    color: #94a3b8;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus {
     outline: none;
-    border-bottom: 1px solid var(--kbs-gold);
-    box-shadow: 0 10px 10px -10px var(--kbs-gold-glow);
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 4px rgba(0, 150, 163, 0.1);
+    background: var(--fondo-contenedor);
 }
 
-/* Botones KBS */
+/* Botones Worketers */
 button {
-    background: var(--kbs-gold);
-    color: #000;
+    background: var(--color-primario);
+    color: var(--fondo-contenedor);
     border: none;
     padding: 14px 24px;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 900;
     font-size: 14px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: all 0.3s;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
     width: 100%;
     display: block;
     margin: 20px 0 0 0;
+    box-shadow: 0 4px 6px rgba(0, 150, 163, 0.2);
 }
 
-button:hover { 
-    background: var(--kbs-gold-hover);
-    box-shadow: 0 0 20px var(--kbs-gold-glow);
-    transform: translateY(-2px);
+button:hover {
+    background: var(--color-primario-hover);
+    box-shadow: 0 6px 8px rgba(0, 150, 163, 0.3);
+    transform: translateY(-1px);
 }
 
-/* Clases Glow Funcionales (Temporizador y Errores) */
-.glow-green { box-shadow: 0 0 15px var(--glow-green); border: 1px solid #22c55e; color: #22c55e; }
-.glow-red { box-shadow: 0 0 15px var(--glow-red); border: 1px solid #ef4444; color: #ef4444; }
-.glow-yellow { box-shadow: 0 0 15px var(--glow-yellow); border: 1px solid #eab308; color: #eab308; }
+button:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 150, 163, 0.2);
+}
+
+/* Clases funcionales */
+.glow-green {
+    box-shadow: 0 0 15px var(--glow-green);
+    border: 1px solid #22c55e;
+    color: #16a34a;
+}
+
+.glow-red {
+    box-shadow: 0 0 15px var(--glow-red);
+    border: 1px solid #ef4444;
+    color: #dc2626;
+}
+
+.glow-yellow {
+    box-shadow: 0 0 15px var(--glow-yellow);
+    border: 1px solid #eab308;
+    color: #ca8a04;
+}
 
 .timer-container {
     text-align: center;
@@ -130,7 +179,7 @@ button:hover {
 
 .timer-container span {
     display: block;
-    color: var(--text-muted);
+    color: var(--texto-muted);
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -139,12 +188,14 @@ button:hover {
 #timer-display {
     display: inline-block;
     padding: 10px 25px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 2.5rem;
     font-weight: bold;
     margin: 10px 0;
     transition: all 0.3s ease;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--fondo-seccion);
+    color: var(--color-primario-dark);
+    border: 1px solid #99d5da;
 }
 
 /* Opciones de respuesta */
@@ -153,20 +204,22 @@ button:hover {
     margin: 10px 0;
     cursor: pointer;
     padding: 10px 15px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.03);
-    transition: all 0.2s;
-    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--fondo-contenedor);
+    transition: all 0.2s ease;
+    border: 1px solid var(--borde-suave);
+    color: var(--texto-principal);
 }
 
 .question-block label:hover {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid var(--kbs-gold-glow);
+    background: var(--fondo-seccion);
+    border-color: #99d5da;
 }
 
-/* Radio buttons y Checkboxes dorados */
-input[type="radio"], input[type="checkbox"] {
-    accent-color: var(--kbs-gold);
+/* Radio buttons y checkboxes */
+input[type="radio"],
+input[type="checkbox"] {
+    accent-color: var(--color-primario);
     transform: scale(1.2);
     margin-right: 10px;
 }
@@ -174,6 +227,33 @@ input[type="radio"], input[type="checkbox"] {
 hr {
     border: 0;
     height: 1px;
-    background-image: linear-gradient(to right, rgba(212, 175, 55, 0), rgba(212, 175, 55, 0.5), rgba(212, 175, 55, 0));
+    background-image: linear-gradient(
+        to right,
+        rgba(0, 150, 163, 0),
+        rgba(0, 150, 163, 0.35),
+        rgba(0, 150, 163, 0)
+    );
     margin: 20px 0;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    body {
+        padding: 20px 0;
+    }
+
+    .hyperion-wrapper {
+        padding: 15px;
+    }
+
+    .card,
+    .test-header,
+    .instructions-box,
+    .question-block {
+        padding: 22px;
+    }
+
+    #timer-display {
+        font-size: 2rem;
+    }
 }
