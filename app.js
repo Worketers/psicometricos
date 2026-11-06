@@ -1,230 +1,46 @@
-// app.js - KBS Edition
-
-const API_URL = "https://script.google.com/macros/s/AKfycbwP4-LmFZth1NECfSKRmGMupmtDnND2PXuaUKTllU6qMVmMpchtBfGbmy8bd-Dl59Is/exec";
-
-let currentSerieIndex = 0;
-let respuestasCandidato = {};
-let timerInterval;
-let candidateID = "";
-
-// Elementos del DOM
-const loginScreen = document.getElementById('login-screen');
-const instructionScreen = document.getElementById('instruction-screen');
-const testScreen = document.getElementById('test-screen');
-const finishScreen = document.getElementById('finish-screen');
-
-const btnValidate = document.getElementById('btn-validate');
-const inputCandidateId = document.getElementById('candidate-id');
-const errorMessage = document.getElementById('error-message');
-const btnStartTimer = document.getElementById('btn-start-timer');
-const btnNextSerie = document.getElementById('btn-next-serie');
-
-// --- 1. VALIDACIÓN DEL CANDIDATO ---
-btnValidate.addEventListener('click', async () => {
-    candidateID = inputCandidateId.value.trim();
-    if (!candidateID) {
-        showError("Por favor ingresa un ID válido.");
-        return;
-    }
-
-    btnValidate.innerText = "Validando...";
-    btnValidate.disabled = true;
-
-    try {
-        const response = await fetch(`${API_URL}?id=${candidateID}`);
-        const data = await response.json();
-
-        if (data.valid) {
-            loginScreen.style.display = 'none';
-            showInstructions(); // Mandamos a la sala de espera de la Serie I
-        } else {
-            showError(data.message || "ID no válido o prueba ya completada.");
-        }
-    } catch (error) {
-        showError("Error de conexión con el servidor.");
-    } finally {
-        btnValidate.innerText = "Comenzar Prueba";
-        btnValidate.disabled = false;
-    }
+// Worketers · Evalúa. Preguntas y tiempos originales; guardado confirmado y reintentos seguros.
+const $=id=>document.getElementById(id);
+let state={id:'',index:0,answers:{},draft:{},deadline:0,phase:'instructions'},clock,sending=false,advancing=false;
+const draftKey='worketers_eval_draft_v1';
+function persist(){try{sessionStorage.setItem(draftKey,JSON.stringify(state));}catch{/* La sesión puede continuar si el navegador no permite almacenamiento. */}}
+function show(id){['login-screen','instruction-screen','test-screen','finish-screen'].forEach(x=>$(x).hidden=x!==id);window.scrollTo(0,0);}
+function error(message){$('error-message').textContent=message;$('error-message').hidden=false;}
+function restore(id){try{const s=JSON.parse(sessionStorage.getItem(draftKey));if(s&&s.id===id&&Number.isInteger(s.index)&&s.index>=0&&s.index<=10){state=s;return true;}}catch{}return false;}
+$('total-minutes').textContent=Math.round(testData.reduce((n,s)=>n+s.timeLimit,0)/60);
+const invitation=new URLSearchParams(location.search).get('id');if(invitation)$('candidate-id').value=invitation;
+$('candidate-login').addEventListener('submit',async e=>{
+ e.preventDefault();const id=$('candidate-id').value.trim();if(!id)return;const btn=$('btn-validate');btn.disabled=true;btn.textContent='Verificando invitación…';$('error-message').hidden=true;
+ try{const r=await api('validate',{id});if(r.completed){showCompleted(true);return;}
+   if(!restore(id))state={id,index:0,answers:{},draft:{},deadline:0,phase:'instructions'};
+   if(state.index>=testData.length)await send();else if(state.phase==='test')renderSerie();else instructions();
+ }catch(err){error(err.message);}finally{btn.disabled=false;btn.textContent='Continuar →';}
 });
-
-function showError(msg) {
-    errorMessage.innerText = msg;
-    errorMessage.style.display = 'block';
-    setTimeout(() => errorMessage.style.display = 'none', 4000);
+function instructions(){clearInterval(clock);state.phase='instructions';state.deadline=0;persist();const s=testData[state.index];$('inst-title').textContent=s.title;$('inst-step').textContent=`Serie ${state.index+1} de ${testData.length}`;$('inst-progress').style.width=`${state.index/testData.length*100}%`;$('inst-time').textContent=`${Math.floor(s.timeLimit/60)} min ${s.timeLimit%60?`${s.timeLimit%60} s`:''}`;$('inst-text').textContent=s.instructions;$('inst-example').textContent=s.example||'';show('instruction-screen');}
+$('btn-start-timer').addEventListener('click',()=>{state.phase='test';state.deadline=Date.now()+testData[state.index].timeLimit*1000;state.draft={};persist();renderSerie();});
+function renderSerie(){
+ clearInterval(clock);const s=testData[state.index];$('serie-title').textContent=s.title;$('test-step').textContent=`SERIE ${state.index+1} DE ${testData.length}`;
+ $('questions-container').innerHTML=s.questions.map((q,i)=>{
+ const selected=state.draft[q.id]||[];const type=q.inputType==='checkbox'?'checkbox':'radio';
+ const field=q.inputType==='text'?`<label class="fine" for="${esc(q.id)}">Escribe tu respuesta</label><input type="text" id="${esc(q.id)}" name="${esc(q.id)}" value="${esc(selected[0]||'')}" autocomplete="off" maxlength="80" placeholder="Tu respuesta">`:`<div class="options">${Object.entries(q.options||{}).map(([k,v])=>`<label class="option"><input type="${type}" name="${esc(q.id)}" value="${esc(k)}" ${selected.includes(k)?'checked':''}><span>${esc(k)}${k===v?'':') '+esc(v)}</span></label>`).join('')}</div>`;
+ return `<fieldset class="question-block"><legend>${esc(q.text)}</legend>${field}</fieldset>`;
+ }).join('');
+ show('test-screen');updateCount();tick();if(state.phase==='test')clock=setInterval(tick,250);
 }
-
-// --- 2. SALA DE ESPERA (INSTRUCCIONES) ---
-function showInstructions() {
-    testScreen.style.display = 'none';
-    instructionScreen.style.display = 'block';
-    clearInterval(timerInterval); // Detenemos cualquier reloj fantasma
-
-    const currentSerie = testData[currentSerieIndex];
-    
-    document.getElementById('inst-title').innerText = currentSerie.title;
-    document.getElementById('inst-text').innerText = currentSerie.instructions;
-    document.getElementById('inst-example').innerText = currentSerie.example || "";
-    
-    const minutes = Math.floor(currentSerie.timeLimit / 60);
-    const seconds = currentSerie.timeLimit % 60;
-    document.getElementById('inst-time').innerText = `${minutes} min ${seconds} seg`;
-    
-    window.scrollTo(0, 0);
+function collect(){const s=testData[state.index];if(!s)return;for(const q of s.questions){state.draft[q.id]=Array.from(document.getElementsByName(q.id)).filter(x=>q.inputType==='text'||x.checked).map(x=>x.value.trim());}persist();updateCount();}
+function updateCount(){const n=Object.values(state.draft).filter(a=>a.some(v=>v!=='')).length;$('answer-count').textContent=`${n} de ${testData[state.index].questions.length} respondidas`;}
+$('answers-form').addEventListener('input',e=>{if(e.target.type==='text')e.target.value=e.target.value.replace(/[^0-9 .\-/]/g,'');collect();});
+$('answers-form').addEventListener('change',e=>{const q=testData[state.index].questions.find(q=>q.id===e.target.name);if(q&&q.inputType==='checkbox'){const checked=Array.from(document.getElementsByName(q.id)).filter(x=>x.checked);if(checked.length>2){e.target.checked=false;}}collect();});
+function tick(){if(state.phase!=='test')return;const n=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));$('timer-display').textContent=`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;const box=$('timer-display').parentElement;box.classList.toggle('warning',n<=30&&n>10);box.classList.toggle('urgent',n<=10);if(!n)advance();}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.phase==='test')tick();});
+$('answers-form').addEventListener('submit',e=>{e.preventDefault();$('confirm-series').showModal();});
+$('cancel-series').addEventListener('click',()=>$('confirm-series').close());
+$('confirm-next').addEventListener('click',()=>advance());
+function advance(){if(advancing||state.phase!=='test')return;advancing=true;$('confirm-series').close();clearInterval(clock);collect();const s=testData[state.index];state.answers['S'+s.serie]=s.questions.map(q=>(state.draft[q.id]||[]).join(q.inputType==='checkbox'?' ':'')).join(',');state.index++;state.draft={};state.deadline=0;state.phase='instructions';persist();advancing=false;if(state.index<testData.length)instructions();else send();}
+async function send(){if(sending)return;sending=true;state.phase='sending';persist();show('finish-screen');$('finish-title').textContent='Guardando tu evaluación';$('finish-message').textContent='Mantén esta página abierta mientras confirmamos el guardado.';$('btn-retry').hidden=true;
+ try{const r=await api('submit',{id:state.id,answers:state.answers});if(!r.saved)throw Error('No recibimos confirmación de guardado.');try{sessionStorage.removeItem(draftKey);}catch{}showCompleted(false);}
+ catch(err){$('finish-title').textContent='Vamos a intentarlo de nuevo';$('finish-message').textContent=err.message+' Tus respuestas se conservan en esta pestaña. Pulsa reintentar sin volver a responder.';$('btn-retry').hidden=false;}
+ finally{sending=false;}
 }
-
-// Botón para arrancar el tiempo desde la sala de espera
-btnStartTimer.addEventListener('click', () => {
-    instructionScreen.style.display = 'none';
-    testScreen.style.display = 'block';
-    startSerie();
-});
-
-// --- 3. RENDERIZADO DE LA SERIE ---
-function startSerie() {
-    const currentSerie = testData[currentSerieIndex];
-    document.getElementById('serie-title').innerText = currentSerie.title;
-    
-    const container = document.getElementById('questions-container');
-    container.innerHTML = '';
-    
-    currentSerie.questions.forEach((q) => {
-        let html = `<div class="question-block"><p><strong>${q.text}</strong></p>`;
-        
-        // Si es pregunta de matemáticas/números (Series V y X)
-        if (q.inputType === "text") {
-            // Permitimos: Números (0-9), espacios ( ), puntos (.), diagonales (/) y guiones (-)
-            // Bloqueamos: Todo tipo de letras y demás símbolos
-            let restricciones = `oninput="this.value = this.value.replace(/[^0-9 .\\-\\/]/g, '')"`;
-            
-            html += `<input type="text" name="${q.id}" placeholder="Tu respuesta..." ${restricciones} autocomplete="off">`;
-        } 
-        // Si es de opción múltiple
-        else if (q.options) {
-            const inputType = q.inputType === "checkbox" ? "checkbox" : "radio";
-            for (const [key, value] of Object.entries(q.options)) {
-                let textoMostrar = (key === value) ? `${key})` : `${key}) ${value}`;
-                html += `<label><input type="${inputType}" name="${q.id}" value="${key}"> ${textoMostrar}</label><br>`;
-            }
-        }
-        
-        html += `</div>`;
-        container.innerHTML += html;
-    });
-
-    window.scrollTo(0, 0);
-    startTimer(currentSerie.timeLimit);
-}
-
-// --- 4. RECOLECCIÓN DE RESPUESTAS ---
-btnNextSerie.addEventListener('click', autoSubmitSerie);
-
-function autoSubmitSerie() {
-    clearInterval(timerInterval);
-    const currentSerie = testData[currentSerieIndex];
-    let respuestasDeEstaSerie = [];
-
-    currentSerie.questions.forEach((q) => {
-        if (q.inputType === "text") {
-            const inputEl = document.querySelector(`input[name="${q.id}"]`);
-            respuestasDeEstaSerie.push(inputEl ? inputEl.value.trim() : "");
-        } else if (q.inputType === "checkbox") {
-            const selected = document.querySelectorAll(`input[name="${q.id}"]:checked`);
-            let values = Array.from(selected).map(el => el.value);
-            respuestasDeEstaSerie.push(values.join(' ')); 
-        } else {
-            const selected = document.querySelector(`input[name="${q.id}"]:checked`);
-            respuestasDeEstaSerie.push(selected ? selected.value : "");
-        }
-    });
-
-    // Guardar las respuestas en el objeto global
-    respuestasCandidato[`S${currentSerie.serie}`] = respuestasDeEstaSerie.join(',');
-
-    currentSerieIndex++;
-    
-    // Si hay más series, regresamos a la sala de espera. Si no, enviamos.
-    if (currentSerieIndex < testData.length) {
-        showInstructions();
-    } else {
-        enviarExamenFinal();
-    }
-}
-
-// --- 5. TEMPORIZADOR Y MOTOR VISUAL ---
-function startTimer(secondsLeft) {
-    const display = document.getElementById('timer-display');
-    
-    // Colores iniciales
-    display.classList.remove('glow-yellow', 'glow-red');
-    display.classList.add('glow-green');
-
-    timerInterval = setInterval(() => {
-        secondsLeft--;
-        
-        let minutes = Math.floor(secondsLeft / 60);
-        let seconds = secondsLeft % 60;
-        
-        if (minutes < 10) minutes = "0" + minutes;
-        if (seconds < 10) seconds = "0" + seconds;
-        
-        display.innerText = `${minutes}:${seconds}`;
-
-        // Alertas visuales de tiempo
-        if (secondsLeft <= 30 && secondsLeft > 10) {
-            display.classList.replace('glow-green', 'glow-yellow');
-        } else if (secondsLeft <= 10) {
-            display.classList.replace('glow-yellow', 'glow-red');
-        }
-
-        // Se acabó el tiempo
-        if (secondsLeft <= 0) {
-            clearInterval(timerInterval);
-            autoSubmitSerie();
-        }
-    }, 1000);
-}
-
-// --- 6. ENVÍO FINAL AL SERVIDOR ---
-async function enviarExamenFinal() {
-    testScreen.style.display = 'none';
-    instructionScreen.style.display = 'none';
-    
-    // Mostramos pantalla de carga
-    document.querySelector('.hyperion-wrapper').innerHTML = `
-        <div class="card" style="text-align: center;">
-            <h2 class="glow-yellow">Enviando resultados...</h2>
-            <p>Por favor no cierres esta ventana.</p>
-        </div>
-    `;
-
-    const payload = {
-        id: candidateID,
-        respuestas: respuestasCandidato
-    };
-
-    try {
-        await fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // Pantalla de Éxito
-        document.querySelector('.hyperion-wrapper').innerHTML = `
-            <div class="card" style="text-align: center;">
-                <h2 class="glow-green">¡Evaluación Completada!</h2>
-                <p>Tus respuestas han sido enviadas exitosamente al equipo de KBS.</p>
-                <p>Ya puedes cerrar esta ventana.</p>
-            </div>
-        `;
-    } catch (error) {
-        document.querySelector('.hyperion-wrapper').innerHTML = `
-            <div class="card" style="text-align: center;">
-                <h2 class="glow-red">Ocurrió un problema</h2>
-                <p>No pudimos conectar con el servidor, pero tus respuestas están a salvo. Por favor avisa a Recursos Humanos.</p>
-            </div>
-        `;
-    }
-}
+function showCompleted(previous){clearInterval(clock);show('finish-screen');$('finish-eyebrow').textContent='EVALUACIÓN COMPLETADA';$('finish-title').textContent=previous?'Esta evaluación ya está registrada':'Gracias por compartir tu talento';$('finish-message').textContent=previous?'La invitación ya fue utilizada. Si necesitas otra evaluación, contacta al equipo.':'El servidor confirmó que tus respuestas quedaron guardadas. El equipo autorizado revisará tus resultados. Ya puedes cerrar esta ventana.';$('btn-retry').hidden=true;$('finish-reference').textContent='Worketers · Evalúa | Tu siguiente paso lo acompaña nuestro equipo.';}
+$('btn-retry').addEventListener('click',send);
+window.addEventListener('beforeunload',e=>{if(state.id&&state.phase==='test'){e.preventDefault();e.returnValue='';}});
