@@ -1,6 +1,6 @@
-# Worketers · Evalúa
+# Way Finder · Evalúa
 
-Portal de evaluación psicométrica con identidad común Worketers.
+Portal de evaluación psicométrica con identidad común Way Finder.
 
 - Candidatos: `https://worketers.github.io/psicometricos/`
 - Administración: `https://worketers.github.io/Recruitment/admin.html`
@@ -18,7 +18,7 @@ El panel incluye avance general, búsqueda, filtros, expediente, barras por áre
 
 ## Mantenimiento
 
-`style.css` contiene las variables comunes `--wk-primary`, `--wk-action`, `--wk-ink` y `--wk-background`. El encabezado usa tres niveles: marca Worketers, módulo Evalúa y función Psicométricos. Esta estructura coincide con Worketers · Talento / Reclutamiento.
+`style.css` contiene las variables comunes `--wk-primary`, `--wk-action`, `--wk-ink` y `--wk-background`. El encabezado usa tres niveles: marca Way Finder, módulo Evalúa y función Psicométricos. Esta estructura coincide con Way Finder · Talento / Reclutamiento.
 
 `config.js` declara únicamente el endpoint público. La administración se autentica y autoriza en el servidor, nunca por ocultar botones. El servidor no forma parte de este repositorio público. Los folios anteriores se conservan por compatibilidad. Los pendientes sin fecha de vencimiento requieren una invitación nueva; los enlaces nuevos usan identificadores aleatorios y caducan a las 24 horas.
 
